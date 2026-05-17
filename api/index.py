@@ -1,11 +1,25 @@
 # api/index.py
 import statistics
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from typing import List
 
 app = FastAPI()
+
+@app.middleware("http")
+async def add_cors(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        })
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 RAW_DATA = [
   {"region":"apac","latency_ms":152.05,"uptime_pct":97.586},
@@ -46,12 +60,6 @@ RAW_DATA = [
   {"region":"amer","latency_ms":188.12,"uptime_pct":97.344},
 ]
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "*",
-}
-
 class AnalyticsRequest(BaseModel):
     regions: List[str]
     threshold_ms: float
@@ -62,10 +70,6 @@ def p95(values: list) -> float:
     sorted_vals = sorted(values)
     index = min(int(len(sorted_vals) * 0.95), len(sorted_vals) - 1)
     return round(sorted_vals[index], 3)
-
-@app.options("/analytics")
-async def options_analytics():
-    return Response(status_code=200, headers=CORS_HEADERS)
 
 @app.post("/analytics")
 async def analytics(req: AnalyticsRequest):
@@ -83,4 +87,4 @@ async def analytics(req: AnalyticsRequest):
             "avg_uptime":  round(statistics.mean(uptimes), 5),
             "breaches":    sum(1 for l in latencies if l > req.threshold_ms),
         }
-    return JSONResponse(content=result, headers=CORS_HEADERS)
+    return result
