@@ -6,24 +6,31 @@ import numpy as np
 
 app = FastAPI()
 
-# Enable CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["POST"],
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Request body structure
+# Request schema
 class RequestData(BaseModel):
     regions: list
     threshold_ms: int
 
-# Load telemetry data
+# Load JSON file
 with open("q-vercel-latency.json", "r") as f:
     telemetry = json.load(f)
 
-@app.post("/")
+# ROOT TEST ROUTE
+@app.get("/")
+def home():
+    return {"message": "API is working"}
+
+# MAIN POST ENDPOINT
+@app.post("/api")
 def analyze_latency(data: RequestData):
 
     results = []
