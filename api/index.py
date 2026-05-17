@@ -1,19 +1,11 @@
 # api/index.py
 import statistics
-from fastapi import FastAPI, Response
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 RAW_DATA = [
   {"region":"apac","latency_ms":152.05,"uptime_pct":97.586},
@@ -54,6 +46,12 @@ RAW_DATA = [
   {"region":"amer","latency_ms":188.12,"uptime_pct":97.344},
 ]
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "*",
+}
+
 class AnalyticsRequest(BaseModel):
     regions: List[str]
     threshold_ms: float
@@ -66,15 +64,11 @@ def p95(values: list) -> float:
     return round(sorted_vals[index], 3)
 
 @app.options("/analytics")
-def options_analytics(response: Response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return {}
+async def options_analytics():
+    return Response(status_code=200, headers=CORS_HEADERS)
 
 @app.post("/analytics")
-def analytics(req: AnalyticsRequest, response: Response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
+async def analytics(req: AnalyticsRequest):
     result = {}
     for region in req.regions:
         records = [r for r in RAW_DATA if r["region"].lower() == region.lower()]
@@ -89,4 +83,4 @@ def analytics(req: AnalyticsRequest, response: Response):
             "avg_uptime":  round(statistics.mean(uptimes), 5),
             "breaches":    sum(1 for l in latencies if l > req.threshold_ms),
         }
-    return result
+    return JSONResponse(content=result, headers=CORS_HEADERS)

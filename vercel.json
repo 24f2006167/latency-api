@@ -1,16 +1,4 @@
 {
   "builds": [{ "src": "api/index.py", "use": "@vercel/python" }],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "methods": ["OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "*"
-      },
-      "dest": "api/index.py"
-    },
-    { "src": "/(.*)", "dest": "api/index.py" }
-  ]
+  "routes": [{ "src": "/(.*)", "dest": "api/index.py" }]
 }
