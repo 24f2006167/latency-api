@@ -18,7 +18,8 @@ app.add_middleware(
 )
 
 # 📦 Load the telemetry data once when the function starts
-DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "q-vercel-latency.json")
+# DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "q-vercel-latency.json")
+DATA_FILE = os.path.join(os.path.dirname(__file__), "q-vercel-latency.json")
 
 with open(DATA_FILE) as f:
     RAW_DATA = json.load(f)
