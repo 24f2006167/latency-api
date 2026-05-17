@@ -1,6 +1,6 @@
 # api/index.py
 import statistics
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
@@ -10,6 +10,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -64,8 +65,16 @@ def p95(values: list) -> float:
     index = min(int(len(sorted_vals) * 0.95), len(sorted_vals) - 1)
     return round(sorted_vals[index], 3)
 
+@app.options("/analytics")
+def options_analytics(response: Response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return {}
+
 @app.post("/analytics")
-def analytics(req: AnalyticsRequest):
+def analytics(req: AnalyticsRequest, response: Response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
     result = {}
     for region in req.regions:
         records = [r for r in RAW_DATA if r["region"].lower() == region.lower()]
